@@ -29,6 +29,11 @@ export function createStudentView() {
         return typeof value === 'string' && value.trim() ? value : '확인 불가';
       }
 
+      function statusText(value, labels) {
+        const code = typeof value === 'string' && value.trim() ? value : 'unknown';
+        return `${labels[code] ?? '확인 불가'} (${code})`;
+      }
+
       function line(parent, message) {
         const paragraph = document.createElement('p');
         paragraph.textContent = message;
@@ -63,8 +68,8 @@ export function createStudentView() {
       const current = group('현재 계정·기기·세션', me);
       if (current.ok) {
         line(current.container, `사용자: ${text(me.data?.user?.label)} · ID: ${text(me.data?.user?.id)}`);
-        line(current.container, `현재 기기: ${text(me.data?.device?.label)} · ID: ${text(me.data?.device?.id)} · 상태: ${deviceStatus[me.data?.device?.status] ?? '확인 불가'}`);
-        line(current.container, `현재 세션: ${text(me.data?.session?.id)} · 상태: ${sessionStatus[me.data?.session?.status] ?? '확인 불가'}`);
+        line(current.container, `현재 기기: ${text(me.data?.device?.label)} · ID: ${text(me.data?.device?.id)} · 상태: ${statusText(me.data?.device?.status, deviceStatus)}`);
+        line(current.container, `현재 세션: ${text(me.data?.session?.id)} · 상태: ${statusText(me.data?.session?.status, sessionStatus)}`);
       }
 
       const deviceList = group('기기 목록', devices);
@@ -73,7 +78,7 @@ export function createStudentView() {
           const list = document.createElement('ul');
           for (const device of devices.data) {
             const item = document.createElement('li');
-            item.textContent = `${text(device?.label)} · ID: ${text(device?.id)} · 상태: ${deviceStatus[device?.status] ?? '확인 불가'}`;
+            item.textContent = `${text(device?.label)} · ID: ${text(device?.id)} · 상태: ${statusText(device?.status, deviceStatus)}`;
             list.appendChild(item);
           }
           deviceList.container.appendChild(list);
@@ -88,7 +93,7 @@ export function createStudentView() {
           const list = document.createElement('ul');
           for (const session of sessions.data) {
             const item = document.createElement('li');
-            item.textContent = `ID: ${text(session?.id)} · 상태: ${sessionStatus[session?.status] ?? '확인 불가'}`;
+            item.textContent = `ID: ${text(session?.id)} · 상태: ${statusText(session?.status, sessionStatus)}`;
             list.appendChild(item);
           }
           sessionList.container.appendChild(list);
