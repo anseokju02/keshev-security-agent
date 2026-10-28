@@ -9,8 +9,8 @@
 | 구분 | 현재 확인한 사실 | 확인 범위 |
 |---|---|---|
 | 제출용 GitHub 저장소 `anseokju02/keshev-security-agent` | 저장소 루트의 `package.json`은 `alekov-client-starter@0.2.14`; `package-lock.json`은 저장소에 없음. 외부 npm 의존성은 `package.json`에 선언되지 않음 | 저장소 파일 확인. 이 원문을 새 Windows PC에서 직접 실행한 결과는 미확인 |
-| 학생 PC 앱 폴더 | `C:\Users\User\Desktop\Aleph 방어전 13단계 준비\on-client`; 업데이트된 앱의 `npm.cmd run check` 출력은 `alekov-client-starter@0.2.21` | 학생이 제공한 PowerShell 출력과 앱 화면 |
-| Node.js | 학생 PC의 실행 도구 출력에서 `v24.19.0` 확인. 저장소 `package.json`의 `engines.node`는 `24.19.0`, 실행 도구 코드는 Node.js 22~24를 허용하고 24.19.0을 수업 기준으로 안내 | 24.19.0에서 앱 시작·문법 검사 확인. 다른 버전의 실제 실행은 미확인 |
+| 학생 PC 앱 폴더 | `C:\Users\User\Desktop\Aleph 방어전 13단계 준비\on-client`; 새 PowerShell에서 읽은 `package.json` 버전은 `0.2.21`이고 `npm.cmd run check` 출력도 `alekov-client-starter@0.2.21` | 학생이 제공한 PowerShell 출력과 앱 화면 |
+| Node.js | 새 PowerShell 창의 `node --version`은 `v24.22.0`. 이전 실행 도구 화면에서는 `v24.19.0`을 확인했음. 저장소 `package.json`의 `engines.node`는 `24.19.0`, 실행 도구 코드는 Node.js 22~24를 허용하고 24.19.0을 수업 기준으로 안내 | 24.19.0에서 앞선 실행·문법 검사 확인, 24.22.0에서 새 창으로 로컬 앱 재시작 및 브라우저 표시 확인. 다른 버전은 미확인 |
 | 실행 환경 | Windows PowerShell에서 `tools/start-alekov.ps1` 사용, PC 브라우저에서 `http://127.0.0.1:5189/` 화면 확인 | PowerShell과 브라우저 화면 확인. PowerShell·브라우저의 세부 버전은 미확인 |
 
 **버전 차이:** PC에서 사용한 0.2.21 제공 파일 전체가 위 GitHub 저장소에 올라간 것은 아닙니다. 저장소의 시작 틀은 0.2.14이고 학생 함수만 단계별로 반영했습니다. 따라서 이 문서의 *PC 확인 결과*를 저장소 0.2.14를 새로 복제해 실행한 결과로 읽지 마세요. 0.2.21 업데이트의 보존 절차는 운영자가 배포한 안내와 `docs/STARTER_UPDATE.md`를 따르며, 학생 파일과 Git 기록을 덮어쓰지 않습니다.
@@ -44,7 +44,7 @@ GitHub 저장소 루트에는 `on-client` 디렉터리가 따로 없고, 위 파
 powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\start-alekov.ps1
 ```
 
-4. 실행 도구 코드의 정상 시작 안내는 `케셰브가 켜졌습니다. 브라우저에서 http://127.0.0.1:5189/ 을 여세요.`와 `서버가 응답한 것만 확인했습니다. AI 연결 상태는 화면에서 따로 확인해 주세요.`입니다. 실제 PC에서는 앱이 켜지고 브라우저 화면이 열린 것을 확인했습니다. 이 신호는 **로컬 HTTP 서버 응답**이며 계정·SDP·AI 연결 완료가 아닙니다.
+4. 실행 도구 코드의 정상 시작 안내는 `케셰브가 켜졌습니다. 브라우저에서 http://127.0.0.1:5189/ 을 여세요.`와 `서버가 응답한 것만 확인했습니다. AI 연결 상태는 화면에서 따로 확인해 주세요.`입니다. 실제 PC에서는 새 PowerShell에서 실행 후 브라우저 화면이 열린 것을 확인했습니다. 이번 재실행의 **PowerShell 안내 문구 원문은 아직 확인하지 않았습니다**. 브라우저 응답은 계정·SDP·AI 연결 완료가 아닙니다.
 5. 브라우저에서 `http://127.0.0.1:5189/`를 엽니다. 「보호 현황」, 「업무 앱」, 「보안 기록」 탭과 제공/학생 표시 영역을 확인합니다. `disconnected`는 연결 없음, `demo`는 예제 자료입니다.
 6. 종료는 실행한 PowerShell 창에서 `Ctrl+C`입니다. 재실행은 같은 앱 폴더에서 3번의 명령을 다시 실행하고 브라우저를 새로고침합니다. 포트 충돌 시 실행 도구는 기존 프로그램을 종료하지 않고 다른 포트를 안내합니다. `-Port 5190`과 같은 옵션은 코드에 있으나 이 PC에서의 사용 결과는 미확인입니다.
 
@@ -105,7 +105,7 @@ flowchart LR
 | 구분 | 근거와 결과 |
 |---|---|
 | 코드로 읽음 | 이 저장소의 `package.json` 0.2.14, `package-lock.json` 부재, `tools/start-alekov.ps1`의 기본 포트·시작/종료 문구, `src/server.mjs`의 loopback 서버와 조건부 연결, `public/index.html` 버튼 이름, 학생 함수 입력 |
-| PC 화면·PowerShell에서 확인 | 사용자 PC의 0.2.21 앱이 제공 도구로 켜짐, `npm.cmd run check`가 `node --check student/extension.mjs`로 오류 없이 종료, `http://127.0.0.1:5189/` 화면 표시. 이전 화면에서 AI 앱 연결 후 `verified` 모델 수 1을 확인했으나 실제 사건 설명 실행과는 별개. 18단계는 사건 미선택 안내, 19단계는 `idle`·조치 미실행, 20단계는 `PROJECT_NOT_CONFIGURED`와 학생 `not_configured` 및 같은 확인 시각을 확인 |
+| PC 화면·PowerShell에서 확인 | 사용자 PC의 0.2.21 앱이 제공 도구로 켜짐, `npm.cmd run check`가 `node --check student/extension.mjs`로 오류 없이 종료. 새 창에서 Node.js `v24.22.0`·앱 `0.2.21`을 읽고 재실행한 뒤 `http://127.0.0.1:5189/`의 세 탭과 「연결 없음」 화면을 확인. 재실행 PowerShell의 시작 문구 원문은 미확인. 이전 화면에서 AI 앱 연결 후 `verified` 모델 수 1을 확인했으나 실제 사건 설명 실행과는 별개. 18단계는 사건 미선택 안내, 19단계는 `idle`·조치 미실행, 20단계는 `PROJECT_NOT_CONFIGURED`와 학생 `not_configured` 및 같은 확인 시각을 확인 |
 | 모의 입력으로 점검 | 18단계의 근거·오류 표시, 19단계의 상태별 ACK/효과 구분과 새 입력 처리, 20단계의 `complete`·`partial`·미조회·오류, 부분 실패 ID 보존, 새 입력의 이전 행 제거. 실제 운영 연동 결과를 대신하지 않음 |
 | 미확인 | 저장소 0.2.14를 새 Windows 환경에서 실행해 재현, PC Git 저장소의 기존 변경 내용·원격과 제출용 GitHub 저장소의 동일성, 실제 `package-lock.json`/설치 버전과 화면 행 대조, 운영 SDP 접속·기록·집행 효과, 실제 사건 AI 설명, OSV 공개 패키지 조회 및 취소 후 늦은 응답·오류 후 새 네트워크 요청 |
 
