@@ -662,6 +662,124 @@ export function createStudentView() {
       root.setAttribute('data-student-explanation-event', event.id);
       return root;
     },
-    renderAction() { return '학생 구현 대기: 현재 사건·조치·실제 대상·사람 확인·ACK와 원천 효과·unknown을 구분하세요.'; },
+    renderAction({ status = 'idle', event = null, actionId = null, target = null,
+      receipt = null, observation = null, message = '', confirmationExpiresAt = null, error = null } = {}) {
+      const root = document.createElement('section');
+      const title = document.createElement('h3');
+      title.textContent = '보안 조치 요청 상태와 실제 결과';
+      root.appendChild(title);
+
+      function line(value) {
+        const paragraph = document.createElement('p');
+        paragraph.textContent = value;
+        root.appendChild(paragraph);
+      }
+      function safeMessage(value) {
+        return typeof value === 'string' && value.trim() && value.length <= 300
+          && !/(?:Bearer\s+\S+|(?:api[_ -]?key|authorization|password|secret|비밀번호|토큰)\s*[:=]\s*\S+|sk-[A-Za-z0-9_-]{8,}|-----BEGIN [A-Z ]*PRIVATE KEY-----)/i.test(value)
+          ? value : null;
+      }
+      function safeId(value) {
+        return typeof value === 'string' && /^[A-Za-z0-9][A-Za-z0-9._:-]{0,119}$/.test(value)
+          ? value : null;
+      }
+      function safeTime(value) {
+        return typeof value === 'string'
+          && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,9})?(?:Z|[+-]\d{2}:\d{2})$/.test(value)
+          && Number.isFinite(Date.parse(value)) ? value : null;
+      }
+      function showError() {
+        const code = typeof error?.code === 'string' && /^[A-Z][A-Z0-9_]{0,79}$/.test(error.code)
+          ? error.code : 'ACTION_RESULT_UNVERIFIED';
+        line(`오류 코드: ${code} · 내용: ${safeMessage(error?.message) ?? '오류 내용을 확인할 수 없습니다.'}`);
+      }
+
+      const descriptions = {
+        idle: '현재 조치 화면은 아직 미실행(idle) 상태입니다. 화면 취소는 이전에 전달된 조치의 효과를 되돌리지 않습니다.',
+        loading: '조치 준비 또는 연동 시스템 결과 조회 중(loading). 처리 결과는 아직 확인되지 않았습니다.',
+        prepared: '준비됨·미실행(prepared). 사람 확인 전이며 조치가 실행되지 않았습니다.',
+        executing: '서버에 전달 중(executing). 원천 처리 결과는 아직 확인되지 않았습니다.',
+        pending: '서버 접수·처리 중(pending). 접수 응답(ACK)은 실제 효과 확인이 아닙니다.',
+        denied: '연동 시스템이 조치를 거절했습니다(denied).',
+        failed: '연동 시스템의 조치 처리가 실패했습니다(failed).',
+        unknown: '결과 불명(unknown). 성공이나 효과 없음으로 판단하지 말고 제공 화면의 「연동 시스템 결과만 재조회」를 사용하세요.',
+        expired: '사람 확인 기한이 지났습니다(expired). 조치를 다시 준비해야 합니다.',
+        error: '요청 처리 안 됨(error).',
+      };
+      const currentEventId = safeId(event?.id);
+      const currentActionId = safeId(actionId);
+      if (status !== 'idle' && receipt
+        && ((receipt.eventId != null && receipt.eventId !== currentEventId)
+          || (receipt.actionId != null && receipt.actionId !== currentActionId))) {
+        if (status === 'error') {
+          line('요청 처리 안 됨(error).');
+          showError();
+        }
+        line('영수증 연결 확인 불가: 사건 또는 조치가 현재 입력과 일치하지 않습니다. 결과 불명(unknown)입니다.');
+        line('이전 요청 결과를 현재 사건에 붙이지 않습니다. 제공 화면의 「연동 시스템 결과만 재조회」로 확인하세요.');
+        return root;
+      }
+      let effectConfirmed = false;
+      if (status === 'succeeded') {
+        const requestId = safeId(receipt?.requestId);
+        const receiptId = safeId(receipt?.receiptId);
+        const observedAt = safeTime(observation?.observedAt);
+        if (observation?.effectApplied === true && currentEventId && currentActionId
+          && receipt?.eventId === currentEventId && receipt?.actionId === currentActionId
+          && requestId && receiptId && observedAt) {
+          effectConfirmed = true;
+          line('연동 시스템의 효과 확인(succeeded). 접수 응답이 아닌 관측 결과입니다.');
+          line(`관측 시각: ${observedAt} · effectApplied: true · receiptId: ${receiptId}`);
+          root.setAttribute('data-student-action-event', currentEventId);
+          root.setAttribute('data-student-action-request', requestId);
+        } else {
+          line('결과 불명(unknown). 효과가 적용됐거나 적용되지 않았다고 판단할 수 없습니다.');
+          line('제공 화면의 「연동 시스템 결과만 재조회」로 현재 요청의 결과를 확인하세요.');
+        }
+      } else {
+        line(descriptions[status] ?? '조치 상태를 확인할 수 없습니다.');
+      }
+      if (status === 'error') {
+        showError();
+      }
+      if (status === 'prepared') {
+        const expiresAt = safeTime(confirmationExpiresAt);
+        line(`사람 확인 기한: ${expiresAt ?? '확인 불가'}`);
+        line('대상과 조치를 확인한 뒤에만 제공 화면의 사람 확인 절차를 진행할 수 있습니다. 현재는 미실행입니다.');
+      }
+      if (['denied', 'failed'].includes(status)) {
+        line(`사유: ${safeMessage(message) ?? safeMessage(error?.message) ?? '확인 불가'}`);
+      } else if (['idle', 'loading', 'prepared', 'expired'].includes(status)) {
+        const detail = safeMessage(message);
+        if (detail) line(`안내: ${detail}`);
+      }
+      if (status !== 'idle') {
+        if (currentEventId) line(`사건 ID: ${currentEventId}`);
+        if (Array.isArray(event?.evidence)) {
+          const evidenceIds = event.evidence.map(row => safeId(row?.id)).filter(Boolean);
+          if (evidenceIds.length) line(`근거 ID: ${evidenceIds.join(', ')}`);
+        }
+        if (currentActionId) line(`조치 ID: ${currentActionId}`);
+        const targetId = safeId(target?.id);
+        if (targetId) line(`실제 대상 ID: ${targetId}`);
+        if (Number.isSafeInteger(target?.generation) && target.generation > 0) {
+          line(`대상 세대(generation): ${target.generation}`);
+        }
+        const requestId = safeId(receipt?.requestId);
+        const receiptId = safeId(receipt?.receiptId);
+        if (requestId) line(`요청 ID(requestId): ${requestId}`);
+        if (receiptId && !effectConfirmed) line(`영수증 ID(receiptId): ${receiptId}`);
+        if (Number.isSafeInteger(receipt?.version) && receipt.version > 0) {
+          line(`영수증 버전(version): ${receipt.version}`);
+        }
+        if (receipt?.replayed === true) {
+          line('같은 요청의 기존 영수증을 다시 확인했습니다(replayed: true). 새 집행으로 세지 않습니다.');
+        }
+        if (receipt?.superseded === true) {
+          line('이전 조회 결과는 현재 결과를 대신하지 않습니다(superseded).');
+        }
+      }
+      return root;
+    },
   };
 }
